@@ -50,8 +50,8 @@ class ToTensor(object):
         
         
 class MyDataset(Dataset):
-    def __init__(self, root_dir=None, istrain=True):
-        path = os.path.join(root_dir, 'train/A2C')
+    def __init__(self, root_dir=None):
+        path = os.path.join(root_dir)
             
         file_list = [os.path.join(path, file) for file in os.listdir(path)]
         self.image_list = [file for file in file_list if ".png" in file]
@@ -60,7 +60,7 @@ class MyDataset(Dataset):
             [RandomFlip(0.5),
              RandomCrop(224),
              ToTensor()])
-
+            
     def __len__(self):
         return len(self.image_list)
 
