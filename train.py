@@ -91,7 +91,11 @@ def main():
             if args.loss == 'bce':
                 loss = bce_loss(output, label)
             elif args.loss == 'dice':
-                loss, _ = dice_loss(output, label)
+                _, d_loss = dice_loss(output, label)
+                b_loss = bce_loss(output, label)
+                loss = b_loss + d_loss
+            elif args.loss == 'onlydice':
+                _, loss = dice_loss(output, label)
             
             losses.update(loss.item(), args.batch_size)
             
@@ -125,7 +129,7 @@ def main():
             
         if score >= best_score:
             best_score = score
-            torch.save(model.state_dict(), f"{args.resume}/best.pth")
+            torch.save(model.state_dict(), f"{args.resume}/{args.loss}_{args.model}_{args.dataset}_best.pth")
             print(f"epoch: {epoch + 1} best score: {best_score.item()}")
             
         

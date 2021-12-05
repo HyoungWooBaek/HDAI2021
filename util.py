@@ -63,7 +63,7 @@ def dice_loss(pred, target, smooth = 1e-5):
     # total loss
     loss = bce + dice_loss
     
-    return loss.sum(), dice.sum()
+    return loss.sum(), dice_loss.sum()
 
 
 class DiceLoss(nn.Module):
