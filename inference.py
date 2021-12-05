@@ -15,8 +15,6 @@ parser.add_argument('--device', type=str, default="cuda:0",
                     help='test time gpu device id')
 parser.add_argument('--dataset', type=str, default='A2C',
                     help='pascal or cityscapes')
-parser.add_argument('--resume', type=str, default="/home/nas_datasets/hyoungwoodata/checkpoint",
-                    help='path to checkpoint to resume from')
 parser.add_argument('--workers', type=int, default=1,
                     help='number of data loading workers')
 parser.add_argument('--model', type=str, default='unet')
@@ -34,7 +32,7 @@ def main():
     elif args.dataset == "A4C":
         test_datapath = "/home/nas_datasets/hyoungwoodata/validation/A4C"
         test_dataset = MyDataset(test_datapath)
-        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
+        test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=args.workers)
     """    
     else:
         train_a2c_path = "/home/nas_datasets/hyoungwoodata/train/A2C"
@@ -56,8 +54,9 @@ def main():
     elif args.model == "resnet152":
         model = resnet152(num_classes=1)
         
+    checkpoint = torch.load(args.parameter, map_location='cpu')
+    model.load_state_dict(checkpoint)
     model.to(device)
-    model.load_state_dict(torch.load(args.parameter))
     
     losses = AverageMeter()
     
