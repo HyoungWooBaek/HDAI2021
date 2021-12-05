@@ -15,7 +15,7 @@ parser.add_argument('--device', type=str, default="cuda:0",
                     help='test time gpu device id')
 parser.add_argument('--dataset', type=str, default='A2C',
                     help='pascal or cityscapes')
-parser.add_argument('--epochs', type=int, default=30,
+parser.add_argument('--epochs', type=int, default=300,
                     help='num of training epochs')
 parser.add_argument('--batch_size', type=int, default=8,
                     help='batch size')
@@ -28,6 +28,7 @@ parser.add_argument('--resume', type=str, default="/home/nas_datasets/hyoungwood
 parser.add_argument('--workers', type=int, default=1,
                     help='number of data loading workers')
 parser.add_argument('--model', type=str, default='unet')
+parser.add_argument('--loss', type=str, default='bce')
 args = parser.parse_args()
 
 
@@ -51,13 +52,24 @@ def main():
         val_dataset = MyDataset(val_datapath)
         val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
         
+    else:
+        train_a2c_path = "/home/nas_datasets/hyoungwoodata/train/A2C"
+        train_a4c_path = "/home/nas_datasets/hyoungwoodata/train/A4C"
+        train_dataset = AllDataset(train_a2c_path, train_a4c_path)
+        train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+        
+        val_a2c_path = "/home/nas_datasets/hyoungwoodata/validation/A2C"
+        val_a4c_path = "/home/nas_datasets/hyoungwoodata/validation/A4C"
+        val_dataset = AllDataset(val_a2c_path, val_a4c_path)
+        val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
+        
     if args.model == "unet":
         model = UNet(n_class=1)
         
     model.to(device)
     
     bce_loss = nn.BCEWithLogitsLoss()
-    optimizer = optim.SGD(model.params(), lr=args.base_lr, momentum=0.9, weight_decay=0.0001)
+    optimizer = optim.SGD(model.parameters(), lr=args.base_lr, momentum=0.9, weight_decay=0.0001)
     max_iter = args.epochs * len(train_dataloader)
     losses = AverageMeter()
     
@@ -73,9 +85,13 @@ def main():
             model.train()
             img = sample["image"].to(device)
             label = sample["mask"].to(device)
+            label = label.unsqueeze(1)
             
             output = model(img)
-            loss = bce_loss(output, label)
+            if args.loss == 'bce':
+                loss = bce_loss(output, label)
+            elif args.loss == 'dice':
+                loss, _ = dice_loss(output, label)
             
             losses.update(loss.item(), args.batch_size)
             
@@ -90,22 +106,28 @@ def main():
                       'loss: {loss.val:.4f} ({loss.ema:.4f})'.format(
                           epoch + 1, i + 1, len(train_dataloader), lr, loss=losses))
                 
+            
+                
         score = 0
         for i, sample in enumerate(val_dataloader):
-            model.eval()
-            img = sample["image"].to(device)
-            label = sample["mask"].to(device)
-            
-            output = model(img)
-            dice = DSC(output, label)
-            jaccard_index = JI(output, label)
-            
-            score += dice + jaccard_index
+            with torch.no_grad():
+                model.eval()
+                img = sample["image"].to(device)
+                label = sample["mask"].to(device)
+                
+                output = model(img)
+                
+                dice = DSC(output, label)
+                jaccard_index = JI(output, label)
+                
+                score += dice + jaccard_index
+                
             
         if score >= best_score:
             best_score = score
             torch.save(model.state_dict(), f"{args.resume}/best.pth")
-            print(f"epoch: {epoch} best score: {best_score.item()}")
+            print(f"epoch: {epoch + 1} best score: {best_score.item()}")
+            
         
 
 if __name__ == "__main__":

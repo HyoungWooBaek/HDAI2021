@@ -44,14 +44,21 @@ def dice_loss(pred, target, smooth = 1e-5):
     bce = F.binary_cross_entropy_with_logits(pred, target, reduction='sum')
     
     pred = torch.sigmoid(pred)
-    intersection = (pred * target).sum(dim=(2,3))
-    union = pred.sum(dim=(2,3)) + target.sum(dim=(2,3))
+    
+    pred = pred.view(-1)
+    target = target.view(-1)
+    
+    intersection = (pred * target).sum()
+    dice = (2. * intersection + smooth) / (pred.sum() + target.sum() + smooth)
+    dice_loss = 1.0 - dice
+    # intersection = (pred * target).sum(dim=(2,3))
+    # union = pred.sum(dim=(2,3)) + target.sum(dim=(2,3))
     
     # dice coefficient
-    dice = 2.0 * (intersection + smooth) / (union + smooth)
+    # dice = 2.0 * (intersection + smooth) / (union + smooth)
     
     # dice loss
-    dice_loss = 1.0 - dice
+    # dice_loss = 1.0 - dice
     
     # total loss
     loss = bce + dice_loss
@@ -71,9 +78,12 @@ class DiceLoss(nn.Module):
         #flatten label and prediction tensors
         inputs = inputs.view(-1)
         targets = targets.view(-1)
+        # print("unique:", torch.unique(targets))
         
         intersection = (inputs * targets).sum()                            
-        dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
+        dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
+        # print("d", dice)
+        # print("d2", intersection, inputs, targets)
         
         return dice
     
