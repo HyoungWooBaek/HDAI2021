@@ -65,6 +65,12 @@ def main():
         
     if args.model == "unet":
         model = UNet(n_class=1)
+    elif args.model == "resnet50":
+        model = resnet50(num_classes=1)
+    elif args.model == "resnet101":
+        model = resnet101(num_classes=1)
+    elif args.model == "resnet152":
+        model = resnet152(num_classes=1)
         
     model.to(device)
     
