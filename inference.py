@@ -33,18 +33,7 @@ def main():
         test_datapath = "/home/nas_datasets/hyoungwoodata/validation/A4C"
         test_dataset = MyDataset(test_datapath)
         test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=args.workers)
-    """    
-    else:
-        train_a2c_path = "/home/nas_datasets/hyoungwoodata/train/A2C"
-        train_a4c_path = "/home/nas_datasets/hyoungwoodata/train/A4C"
-        train_dataset = AllDataset(train_a2c_path, train_a4c_path)
-        train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
-        
-        val_a2c_path = "/home/nas_datasets/hyoungwoodata/validation/A2C"
-        val_a4c_path = "/home/nas_datasets/hyoungwoodata/validation/A4C"
-        val_dataset = AllDataset(val_a2c_path, val_a4c_path)
-        val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
-    """    
+    
     if args.model == "unet":
         model = UNet(n_class=1)
     elif args.model == "resnet50":
